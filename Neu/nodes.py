@@ -3,6 +3,10 @@ import uuid
 import collections
 import math
 
+#Eigene Exception
+class BadTreeException(Exception):
+    pass
+
 #Referenzen
 __elements__ = {}
 __children__ = {}
@@ -24,10 +28,12 @@ def get_cytoscape_elements_list():
 
 class Node(object):
 
-    def __init__(self):
+    def __init__(self,label="Knoten",description="",position=(0,0)):
         self.id = str(uuid.uuid4())
         self.cytoscape_id = self.id
-        self.cytoscape_label = "Knoten"
+        self.cytoscape_label = label
+        self.cytoscape_descr = description
+        self.position = position
         __elements__[self.id] = self
         __children__[self.id] = []
         __parents__[self.id] = []
@@ -37,10 +43,18 @@ class Node(object):
             "data" : {
                 "id" :              self.cytoscape_id,
                 "label" :           self.cytoscape_label,
+                "desc" :            self.cytoscape_descr,
+                "text":             self.cytoscape_text,
                 "type" :            self.__class__.__name__.lower(),
                 "isRoot":           self.is_root,
                 "isLeave":          self.is_leave,
-                "expected_value":   self.expected_value
+                "calculation":      self.calculation,
+                "properties":       self.properties,
+            },
+
+            "position": {
+                "x" : self.x,
+                "y" : self.y
             }
         }
     
@@ -59,25 +73,14 @@ class Node(object):
         __parents__[child_id].append(self.id)
     
     def add_parent(self,node):
-        parent_id = node.id
-
-        #setzt Parent Beziehung
-        if self.id not in __parents__.keys():
-            __parents__[self.id] = []
-        __parents__[self.id].append(parent_id)
-
-        #setzt Child Beziehung
-        if parent_id not in __children__.keys():
-            __children__[parent_id] = []
-        __children__[parent_id].append(self.id)
+        node.add_child(self)
     
     def remove_child(self, node):
         __children__.pop(self.id,[]).remove(node.id)
         __parents__.get(node.id,[]).remove(self.id)
     
     def remove_parent(self, node):
-        __parents__.get(self.id,[]).remove(node.id)
-        __children__.pop(node.id,[]).remove(self.id)
+        node.remove_child(self)
     
     def remove(self):
         
@@ -108,54 +111,79 @@ class Node(object):
         return [__elements__[parent_id] for parent_id in __parents__.get(self.id,[])]
     
     @property
-    def expected_value (self):
+    def cytoscape_text (self):
+        return self.cytoscape_descr
+
+    @property
+    def position (self):
+        return (self.x, self.y)
+    
+    @position.setter
+    def position(self,value):
+        self.x = value[0]
+        self.y = value[1]
+
+    @property
+    def calculation (self):
         raise NotImplementedError
+    
+    @property
+    def properties (self):
+        return {}
 
 class AndNode(Node):
 
-    def __init__(self):
-        super().__init__()
-        self.cytoscape_label = "Und-Knoten"
+    def __init__(self,label="Und-Knoten",description="",position=(0,0)):
+        super().__init__(label=label,description=description,position=position)
 
     @property
-    def expected_value (self):
+    def calculation (self):
         
-        if len(self.children) == 0 and len(self.parents) > 0:
-            raise ValueError("AndNode can't be a leave")
+        if self.is_leave:
+            raise BadTreeException("AndNode can't be a leave")
         
         ret = 0
         for child in self.children:
-            ret += child.expected_value
+            ret += child.calculation
         return ret
 
 class OrNode(Node):
 
-    def __init__(self):
-        super().__init__()
-        self.cytoscape_label = "Oder-Knoten"
+    def __init__(self, label="Oder-Knoten",description="",position=(0,0)):
+        super().__init__(label=label,description=description,position=position)
 
     @property
-    def expected_value (self):
+    def calculation (self):
         
-        if len(self.children) == 0 and len(self.parents) > 0:
-            raise ValueError("OrNode can't be a leave")
+        if self.is_leave:
+            raise BadTreeException("OrNode can't be a leave")
         
         ret = 0
         for child in self.children:
-            ret += child.expected_value
+            ret += child.calculation
         return ret
 
 class ValueNode(Node):
 
-    def __init__(self):
-        super().__init__()
-        self.cytoscape_label = "Werte-Knoten"
-        self.__expected_value__ = 13
-    
-    def add_child(self, node):
-        raise ValueError("ValueNode must be a leave")
+    def __init__(self, expected_value = 1, variance = 0,label="Werte-Knoten",description="",position=(0,0)):
+        super().__init__(label=label,description=description,position=position)
+        self.expected_value = expected_value
+        self.variance = variance
 
     @property
-    def expected_value (self):
-        return self.__expected_value__
+    def calculation (self):
+        if len(self.children) > 1:
+            raise BadTreeException("ValueNode can only have one children")
+        return self.expected_value
+    
+    @property
+    def cytoscape_text (self):
+        return f"{self.cytoscape_descr}\nµ={self.expected_value}\nσ²={self.variance}"
+
+    @property
+    def properties (self):
+        return {
+            "expected_value" : self.expected_value,
+            "variance": self.variance
+        }
     
