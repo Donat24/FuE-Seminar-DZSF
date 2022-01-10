@@ -1,7 +1,8 @@
 from os import remove
 import uuid
-import collections
 import math
+import scipy.stats as stats
+import numpy as np
 
 #Eigene Exception
 class BadTreeException(Exception):
@@ -187,3 +188,42 @@ class ValueNode(Node):
             "variance": self.variance
         }
     
+    #Properties löschen Sample Data
+    @property
+    def expected_value (self):
+        return self.__expected_value__
+    
+    @expected_value.setter
+    def expected_value(self,value):
+        self.__expected_value__ = value
+        self.__sample_data__ = None
+    
+    @property
+    def variance (self):
+        return self.__variance__
+    
+    @variance.setter
+    def variance(self,value):
+        self.__variance__ = value
+        self.__sample_data__ = None
+    
+    @property
+    def standard_deviation (self):
+        return math.sqrt(self.variance)
+
+
+    def get_sample_data(self,size=1000):
+        if self.__sample_data__ is None or len(self.__sample_data__) == size:
+            if self.variance == 0:
+                self.__sample_data__ = np.full(
+                    shape=size,
+                    fill_value=self.expected_value
+                )
+            else:
+                lower, upper = 0, 1
+                self.__sample_data__ = stats.truncnorm.rvs(
+                    (lower - self.expected_value) / self.standard_deviation,
+                    (upper - self.expected_value) / self.standard_deviation,
+                    size=size
+                )
+        return self.__sample_data__
