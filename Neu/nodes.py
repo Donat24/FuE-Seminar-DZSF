@@ -78,8 +78,8 @@ class Node(object):
         node.add_child(self)
     
     def remove_child(self, node):
-        __children__.pop(self.id,[]).remove(node.id)
-        __parents__.get(node.id,[]).remove(self.id)
+        __children__.get(self.id,[]).remove(node.id)
+        __parents__.get (node.id,[]).remove(self.id)
     
     def remove_parent(self, node):
         node.remove_child(self)
@@ -185,7 +185,7 @@ class ValueNode(Node):
         if len(self.children) > 1:
             raise BadTreeException("ValueNode can only have one children")
         
-        if self.is_leave:
+        if self.is_leave or self.no_connections:
             return self.expected_value
         
         else:
@@ -197,7 +197,7 @@ class ValueNode(Node):
         if len(self.children) > 1:
             raise BadTreeException("ValueNode can only have one children")
         
-        if self.is_leave:
+        if self.is_leave or self.no_connections:
             return self.variance
         
         else:

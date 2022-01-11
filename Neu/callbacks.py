@@ -11,6 +11,7 @@ def add_callbacks(app):
     app.callback(
         Output("cytoscape", "elements"),
 
+        Input("button-delete-all","n_clicks"),
         Input("button-add-node","n_clicks"),
         Input("node-selector","value"),
         Input("button-add-edge","n_clicks"),
@@ -48,7 +49,7 @@ def add_callbacks(app):
         Input("slider-variance","value"))(change_histogramm_node_callback)
 
 
-def cytoscape_callback(btn_add_node,node_type,btn_add_edge,btn_rev_edge,
+def cytoscape_callback(btn_delete_all,btn_add_node,node_type,btn_add_edge,btn_rev_edge,
         slider_expected_value, slider_variance,
         cytoscape_node_list,cytoscape_edge_list):
 
@@ -57,6 +58,9 @@ def cytoscape_callback(btn_add_node,node_type,btn_add_edge,btn_rev_edge,
             n_clicks[name] = counter
             return True
         return False
+
+    if check_and_set("btn_delete_all",btn_delete_all):
+        click_button_delete_all(btn_delete_all)
 
     if check_and_set("btn_add_node",btn_add_node):
         click_button_add_or_remove_node(btn_add_node,node_type,cytoscape_node_list)
@@ -73,6 +77,11 @@ def cytoscape_callback(btn_add_node,node_type,btn_add_edge,btn_rev_edge,
     return nodes.get_cytoscape_elements_list()
 
 #Click Events
+def click_button_delete_all(n):
+    nodes.__elements__= {}
+    nodes.__children__= {}
+    nodes.__parents__= {}
+
 def click_button_add_or_remove_node(n,node_type,node_list):
     
     #Hinzufügen
