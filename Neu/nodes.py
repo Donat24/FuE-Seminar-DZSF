@@ -49,7 +49,8 @@ class Node(object):
                 "type" :            self.__class__.__name__.lower(),
                 "isRoot":           self.is_root,
                 "isLeave":          self.is_leave,
-                "calculation":      self.calculation,
+                "expected_value":   self.calculate_expected_value,
+                "variance":         self.calculate_variance,
                 "properties":       self.properties,
             },
 
@@ -102,6 +103,10 @@ class Node(object):
     @property
     def is_leave(self):
         return (len(self.children) == 0) and (len(self.parents) > 0)
+    
+    @property
+    def no_connections(self):
+        return (len(self.children) == 0) and (len(self.parents) == 0)
 
     @property
     def children (self):
@@ -125,7 +130,11 @@ class Node(object):
         self.y = value[1]
 
     @property
-    def calculation (self):
+    def calculate_expected_value (self):
+        raise NotImplementedError
+
+    @property
+    def calculate_variance (self):
         raise NotImplementedError
     
     @property
@@ -138,31 +147,31 @@ class AndNode(Node):
         super().__init__(label=label,description=description,position=position)
 
     @property
-    def calculation (self):
+    def calculate_expected_value (self):
         
         if self.is_leave:
             raise BadTreeException("AndNode can't be a leave")
         
         ret = 0
         for child in self.children:
-            ret += child.calculation
+            ret += child.calculate_expected_value
+        return ret
+    
+    @property
+    def calculate_variance (self):
+        
+        if self.is_leave:
+            raise BadTreeException("AndNode can't be a leave")
+        
+        ret = 0
+        for child in self.children:
+            ret += child.calculate_variance
         return ret
 
 class OrNode(Node):
 
     def __init__(self, label="Oder-Knoten",description="",position=(0,0)):
         super().__init__(label=label,description=description,position=position)
-
-    @property
-    def calculation (self):
-        
-        if self.is_leave:
-            raise BadTreeException("OrNode can't be a leave")
-        
-        ret = 0
-        for child in self.children:
-            ret += child.calculation
-        return ret
 
 class ValueNode(Node):
 
@@ -172,10 +181,31 @@ class ValueNode(Node):
         self.variance = variance
 
     @property
-    def calculation (self):
+    def calculate_expected_value (self):
         if len(self.children) > 1:
             raise BadTreeException("ValueNode can only have one children")
-        return self.expected_value
+        
+        if self.is_leave:
+            return self.expected_value
+        
+        else:
+            child = self.children[0]
+            return self.expected_value * child.calculate_expected_value
+    
+    @property
+    def calculate_variance (self):
+        if len(self.children) > 1:
+            raise BadTreeException("ValueNode can only have one children")
+        
+        if self.is_leave:
+            return self.variance
+        
+        else:
+            child = self.children[0]
+            return self.expected_value * self.expected_value * child.calculate_variance + \
+                child.calculate_expected_value * child.calculate_expected_value * self.variance + \
+                self.variance * child.calculate_variance
+    
     
     @property
     def cytoscape_text (self):

@@ -18,6 +18,11 @@ sidebar = html.Div(
         html.Div(
             className="row",
             children=[
+            
+            html.Button("Alles Löschen",   id="button-delete-all", n_clicks=0, style={"width" : "100%","margin":"0.75rem"}),
+            html.Button("Ansicht",    id="button-toggle-view", n_clicks=0, style={"width" : "100%","margin":"0.75rem"}),
+            html.Hr(),
+            
             html.Div(
                 className="div-for-dropdown",
                 children=[
@@ -34,7 +39,7 @@ sidebar = html.Div(
             ),
 
             html.Button("Knoten +",   id="button-add-node", n_clicks=0, style={"width" : "100%","margin":"0.75rem"}),
-            html.Button("Kante + / -",    id="button-add-edge", n_clicks=0, style={"width" : "100%","margin":"0.75rem"}),
+            html.Button("Kante +",    id="button-add-edge", n_clicks=0, style={"width" : "100%","margin":"0.75rem"}),
             html.Button("Kante umdrehen", id="button-rev-edge", n_clicks=0, style={"width" : "100%","margin":"0.75rem"}),
             
             html.Hr(),
