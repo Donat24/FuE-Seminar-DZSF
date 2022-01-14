@@ -2,6 +2,8 @@ from dash import Dash, html, Input, Output, State
 import plotly.express as px
 import nodes
 import numpy as np
+import styling
+import setup_tree
 
 #scheiß dash
 n_clicks = {}
@@ -21,6 +23,10 @@ def add_callbacks(app):
         
         State("cytoscape", "selectedNodeData"),
         State("cytoscape", "selectedEdgeData"))(cytoscape_callback)
+    
+    app.callback(
+        Output("cytoscape", "stylesheet"),
+        Input("button-toggle-view","n_clicks"))(click_button_change_view)
     
     app.callback(
         Output("button-add-node","children"),
@@ -78,9 +84,17 @@ def cytoscape_callback(btn_delete_all,btn_add_node,node_type,btn_add_edge,btn_re
 
 #Click Events
 def click_button_delete_all(n):
+    #clear all
     nodes.__elements__= {}
     nodes.__children__= {}
     nodes.__parents__= {}
+
+    #reset
+    setup_tree.setup_tree()
+
+
+def click_button_change_view(n):
+    return styling.cytoscape_stylesheet[n % len(styling.cytoscape_stylesheet)]
 
 def click_button_add_or_remove_node(n,node_type,node_list):
     
@@ -92,6 +106,8 @@ def click_button_add_or_remove_node(n,node_type,node_list):
             node = nodes.AndNode()
         elif node_type == "or":
             node = nodes.OrNode()
+        elif node_type == "result":
+            node = nodes.ResultNode()
 
     
     #Löschen
@@ -182,5 +198,7 @@ def change_histogramm_node_callback(node_list, slider_expected_value, slider_var
         if isinstance(node,nodes.ValueNode):
             data = node.get_sample_data()
     
+    counts, bins = np.histogram (data,bins = np.arange(start = -0.1, stop = 1.1, step = 0.05))
+    bins = 0.5 * (bins[:-1] + bins[1:])
 
-    return px.histogram(data, nbins=20, range_x=[0, 1], histnorm="percent")
+    return px.bar(x=bins, y=counts, labels={'x':'Wertebereich', 'y':'Prozent'})

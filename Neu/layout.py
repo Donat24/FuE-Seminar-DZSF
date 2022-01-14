@@ -1,10 +1,8 @@
 from dash import dcc
 from dash import html
-#import dash_bootstrap_components as dbc
+import styling
 import dash_cytoscape as cyto
 from nodes import get_cytoscape_elements_list
-
-
 
 sidebar = html.Div(
     className="columns three",
@@ -30,9 +28,10 @@ sidebar = html.Div(
                 dcc.Dropdown(
                     id="node-selector",
                     options=[
-                        {"label": "Werte-Knoten", "value": "value"},
-                        {"label": "Und-Knoten", "value": "and"},
-                        {"label": "Oder-Knoten", "value": "or"},
+                        {"label": "Werte-Knoten",   "value": "value"},
+                        {"label": "Und-Knoten",     "value": "and"},
+                        {"label": "Oder-Knoten",    "value": "or"},
+                        {"label": "Result-Knoten",  "value": "result"},
                     ],
                 ),
                 ]
@@ -73,25 +72,14 @@ content = html.Div(
         html.Hr(),
         cyto.Cytoscape(
             style = {
-                "width" : "100%",
-                "height" : "600px"
+                "position": "absolute",
+                "width": "100%",
+                "height": "100%",
+                "z-index": 999
             } ,
             id='cytoscape',
             layout={'name': 'preset'},
-            stylesheet=[
-                {
-                    'selector': ':selected',
-                    'style': { 'color': 'CadetBlue', 'background-color': 'CadetBlue' }
-                },
-                {
-                    'selector': 'label',             
-                    'style': { 'content': 'data(text)', 'color': 'grey', 'text-wrap': 'wrap'}
-                },          
-                {
-                    'selector': 'edge',
-                    'style': {'curve-style': 'bezier','source-arrow-shape': 'triangle'}
-                },
-            ],
+            stylesheet=styling.cytoscape_normal,
             elements = get_cytoscape_elements_list()
         ),
     ],
