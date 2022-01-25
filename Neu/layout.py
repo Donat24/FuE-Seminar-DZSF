@@ -50,6 +50,11 @@ sidebar = html.Div(
             dcc.Slider(id="slider-expected-value", min=0, max=1, value=0, step= 0.001, included=True, updatemode='drag'),
             html.H6("Variance"),
             dcc.Slider(id="slider-variance", min=0, max=1, value=0, step= 0.001, included=True, updatemode='drag'),
+
+            html.Hr(),
+            html.H6("Monte-Carlo"),
+            dcc.Graph(id="histogramm-monte-carlo"),
+
         ],
         style={
             "margin" : "20px"

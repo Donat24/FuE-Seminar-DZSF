@@ -1,4 +1,6 @@
+from itertools import count
 from dash import Dash, html, Input, Output, State
+from itsdangerous import exc
 import plotly.express as px
 import nodes
 import numpy as np
@@ -53,6 +55,17 @@ def add_callbacks(app):
         Input("cytoscape", "selectedNodeData"),
         Input("slider-expected-value","value"),
         Input("slider-variance","value"))(change_histogramm_node_callback)
+    
+    app.callback(
+        Output("histogramm-monte-carlo","figure"),
+        Input("cytoscape", "selectedNodeData"),
+        Input("button-delete-all","n_clicks"),
+        Input("button-add-node","n_clicks"),
+        Input("node-selector","value"),
+        Input("button-add-edge","n_clicks"),
+        Input("button-rev-edge","n_clicks"),
+        Input("slider-expected-value","value"),
+        Input("slider-variance","value"))(change_histogramm_monte_carlo)
 
 
 def cytoscape_callback(btn_delete_all,btn_add_node,node_type,btn_add_edge,btn_rev_edge,
@@ -201,4 +214,24 @@ def change_histogramm_node_callback(node_list, slider_expected_value, slider_var
     counts, bins = np.histogram (data,bins = np.arange(start = -0.1, stop = 1.1, step = 0.05))
     bins = 0.5 * (bins[:-1] + bins[1:])
 
-    return px.bar(x=bins, y=counts, labels={'x':'Wertebereich', 'y':'Prozent'})
+    return px.bar(x=bins, y=counts, labels={'x':'Wertebereich', 'y':'Anzahl'})
+
+def change_histogramm_monte_carlo(node_list,*args,**kwargs):
+    
+    data = []
+
+    if node_list is not None and len(node_list) == 1:
+        
+        entry = node_list[0]
+        node = nodes.__elements__[entry["id"]]
+        
+        if node.valide_subtree:
+            try:
+                data = node.monte_carlo()
+            except:
+                pass
+    
+    counts, bins = np.histogram (data,bins = np.arange(start = -0.1, stop = 1.1, step = 0.05))
+    bins = 0.5 * (bins[:-1] + bins[1:])
+
+    return px.bar(x=bins, y=counts, labels={'x':'Wertebereich', 'y':'Anzahl'})
